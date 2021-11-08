@@ -1,99 +1,121 @@
-const axios = require("axios");
-const uuid = require('uuid').v4;
+const axios = require("../utils/axios.helper");
+const axiosOrigin = require("axios");
 
-// const databaseWriteUrl = "https://api.zuri.chat/data/write";
-// const databaseReadUrl = "https://api.zuri.chat/data/read";
+const databaseReadUrl = "https://api.zuri.chat/data/read";
+const databaseWriteUrl = "https://api.zuri.chat/data/write";
+const databaseDeleteUrl = "https://api.zuri.chat/data/delete";
+const organizationUrl = `https://api.zuri.chat/organizations`;
 
-const databaseWriteUrl = "https://zccore.herokuapp.com/data/write";
-const databaseReadUrl = "https://zccore.herokuapp.com/data/read";
+const PLUGIN_ID = process.env.PLUGIN_ID || '61696153b2cc8a9af4833d6a';
+const ORG_ID = process.env.ORG_ID || '616986c5fbc5b28d42170c64';
 
-class DatabaseConnection {
-  constructor(collection_name) {
-    this.data = {
-      plugin_id: '613125166e7d00b82b78b815',
-      organization_id: '612a3a914acf115e685df8e3',
-      collection_name: collection_name,
-      bulk_write: false,
-      object_id: '',
-      filter: {},
-      payload: {}
-    }
-  }
+// const PLUGIN_ID = process.env.PLUGIN_ID || '61696153b2cc8a9af4833d6a';
+// const ORG_ID = process.env.ORG_ID || '6133c5a68006324323416896';
 
-  create = async (payload) => {
-    try {
+class DatabaseOps {
+	constructor(collection) {
+		this.data = {
+			plugin_id: PLUGIN_ID,
+			organization_id: ORG_ID,
+			collection_name: collection,
+			bulk_write: false,
+			object_id: '',
+			filter: {},
+			options: {},
+			payload: {}
+		}
 
-      this.data.payload = payload;
-      this.data.object_id = `${this.data.collection_name}-${uuid()}`
+		this.delete_data = {
+			plugin_id: PLUGIN_ID,
+			organization_id: ORG_ID,
+			collection_name: collection,
+			bulk_delete: false,
+			object_id: ''
+		}
+	}
 
-      const response = await axios.post(
-        databaseWriteUrl,
-        JSON.stringify(this.data)
-      );
+	normalizeFilterQuery(paramsObject) {
+		return Object
+			.keys(paramsObject)
+			.filter(key => paramsObject[key] !== null)
+			.map(key => `${encodeURIComponent(key)}=${encodeURIComponent(paramsObject[key])}`)
+			.join('&')
+		;
+	}
 
-      return response.data;
 
-    } catch (error) {
-      
-      return error.response;
+	async create(payload) {
+		this.data.filter = undefined;
+		this.data.payload = payload;
 
-    }
-  };
+		const { data } = await axios.post(databaseWriteUrl, this.data);
+		return data;
+	}
 
-  fetchAll = async ( filter = {} ) => {
+	async createWithUrlAndHeaders(payload, orgId) {
+		// this.data.payload = payload;
+		const url = `${organizationUrl}/${orgId}/plugins`
+		console.log(payload, 'payload')
+		const {data} = await axiosOrigin.post(url, payload)
+
+		return data;
+	}
+
+	async fetchAll() {
+		const { data } = await axios.get(`${databaseReadUrl}/${this.data.plugin_id}/${this.data.collection_name}/${this.data.organization_id}`);
+
+		return data === null ? [] : data;
+	}
+
+	async fetchOne(query) {
+		const { data } = await axios.get(`${databaseReadUrl}/${this.data.plugin_id}/${this.data.collection_name}/${this.data.organization_id}?${this.normalizeFilterQuery(query)}`);
+
+		return data;
+	}
+
+	async fetchByFilter(filter = {}, options = {}) {
+		this.data.filter = filter;
+		this.data.options = options;
     
-    try {
-      
-      this.data.filter = filter;
-      const response = await axios.get(
-        `${databaseReadUrl}/${this.data.plugin_id}/${this.data.collection_name}/${this.data.organization_id}`
-      );
-  
-      return response.data;
+		const { data } = await axios.post(`${databaseReadUrl}`, this.data);
 
-    } catch (error) {
+		return data === null ? [] : data;
+	}
 
-      return error.response.data;
+	async update(id, payload) {
+		this.data.filter = undefined;
+		this.data.payload = payload;
+		this.data.object_id = id;
 
-    }
+		const { data } = await axios.put(databaseWriteUrl, this.data);
 
-  };
+		return data;
+	}
 
-  fetchOne = async (id) => {
-    try {
-      
-      const response = await axios.get(
-        `${databaseReadUrl}/${this.data.plugin_id}/${this.data.collection_name}/${this.data.organization_id}?object_id=${id}`
-      );
-  
-      return response.data;
+	async delete(id) {
+		if (id instanceof Array) {
+			const deletedItems = await Promise.all(
+				id.map(_id => {
+					this.delete_data.object_id = _id;
+					return axios.post(databaseDeleteUrl, this.delete_data);
+				})
+			);
+			return deletedItems;
+		} else {
+			this.delete_data.object_id = id;
+			const { data } = await axios.post(databaseDeleteUrl, this.delete_data);
 
-    } catch (error) {
-      
-      return error.response.data;
+			return data;
+		}
+	}
 
-    }
-  };
+	async deleteAll() {
+		this.delete_data.bulk_delete = true;
+		this.delete_data.filter = {};
+		const { data } = await axios.post(databaseDeleteUrl, this.delete_data);
 
-  update = async (id, payload) => {
-    try {
-      
-      this.data.payload = payload;
-      this.data.object_id = id;
-
-      const response = await axios.post(
-        databaseWriteUrl,
-        JSON.stringify(this.data)
-      );
-
-      return response.data;
-
-    } catch (error) {
-      
-      return error.response.data;
-      
-    }
-  };
+		return data;
+	}
 }
 
-module.exports = DatabaseConnection;
+module.exports = DatabaseOps;

@@ -1,0 +1,88 @@
+import React, { useState, useRef } from "react";
+import { useSnackbar } from "react-simple-snackbar";
+import RecentlyViewed from "./RecentlyViewed";
+import Folder from "./Folder/index";
+import Files from "./Files/index";
+// import SelectFileModal from "../FileUpload/SelectFileModal";
+import FileOptions from "../FileUpload/FileOptions";
+import ShortCut from "./ShortCut";
+import UploadProgressModal from "../FileUpload/UploadProgressModal";
+import FileUpload from "../FileUpload/index";
+import Room from "./Room/index";
+
+const Index = () => {
+  const [upload, setUpload] = useState(false);
+  const [progress, setProgress] = useState(false);
+  const [options, setOptions] = useState(false);
+  const [demo, setDemo] = useState(false);
+  const [SnackBar] = useSnackbar({
+    position: "bottom-center",
+    style: { backgroundColor: "#00B87C", color: "#fff" }
+  });
+
+  // let progress = useRef(false)
+
+  const showOptions = (e) => {
+    setOptions(!options);
+    e.stopPropagation();
+    document.addEventListener("click", hideOptions);
+  };
+
+  const hideOptions = (event) => {
+    setOptions(false);
+    event.stopPropagation();
+    document.removeEventListener("click", hideOptions);
+  };
+
+  const showUploadModal = () => {
+    setUpload(!upload);
+  };
+
+  const hideUploadModal = () => {
+    setUpload(!upload);
+  };
+
+  const showProgressModal = () => {
+    hideUploadModal();
+    setProgress(true);
+    setDemo(true);
+    console.log({ Progress: progress, Demo: demo });
+  };
+
+  const hideProgressModal = () => {
+    setProgress(false);
+  };
+
+  return (
+    <div
+      className={`${
+        upload ? " tw-overflow-y-hidden" : ""
+      } tw-w-full tw-mt-7 tw-py-4 tw-px-10 tw-z-auto`}
+    >
+      <button
+        onClick={showOptions}
+        className="tw-mt-4 tw-px-3 tw-py-2 tw-text-sm tw-text-green-500 tw-border tw-rounded tw-border-green-500 hover:tw-text-white hover:tw-bg-green-500 tw-outline-none"
+      >
+        Add New
+      </button>
+      {/* <Room /> */}
+      <FileOptions options={options} showUploadModal={showUploadModal} />
+      <ShortCut />
+      <RecentlyViewed />
+      <Folder />
+      <Files />
+      {upload && (
+        <FileUpload
+          upload={upload}
+          progress={progress}
+          hideUploadModal={hideUploadModal}
+          showProgressModal={showProgressModal}
+          hideProgressModal={hideProgressModal}
+        />
+      )}
+      {/* {(Object.keys(newFile.data).length > 0) && SnackBar(`"${newFile.data.fileName}"` + " uploaded successfully 🎉!", 10e3)} */}
+    </div>
+  );
+};
+
+export default Index;

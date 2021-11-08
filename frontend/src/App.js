@@ -1,54 +1,56 @@
-import './App.css'
+/* eslint-disable react/jsx-filename-extension */
+import "@fortawesome/fontawesome-svg-core/styles.css";
+import React, { useEffect } from "react";
+import axios from "axios";
+import { useDispatch } from "react-redux";
 
-import { Route, BrowserRouter as Router, Switch } from 'react-router-dom'
+import Layout from "./components/Layout";
+import Main from "./components/Main";
+import "./App.css";
+import { getUserInfo } from "./actions/workspaceInfo";
+import store from "./store/store";
 
-import Activities from './components/Activities/Activities'
-import AllFiles from './components/All files/AllFiles'
-import Favourites from './components/Favourites/Favourites'
-import Help from './components/Help/Help'
-import Shared from './components/Shared/Shared'
-import Trash from './components/Trash/Trash'
-import Folder from './components/Folder/Folder'
-import FilePreviewDemo from './FilePreview/Demo'
-// import Sidebar from "./components/SideBar/Sidebar";
-import Home from './components/Home/Home'
+const API_URL =
+  window.location.hostname.includes("localhost") ||
+  window.location.hostname.includes("127.0.0.1")
+    ? "http://localhost:22666/api/v1"
+    : "https://companyfiles.zuri.chat/api/v1";
+axios.defaults.baseURL = API_URL;
+const { info } = store.getState().rootReducer.workspaceReducer;
+axios.defaults.headers.common.Authorization = `Bearer ${info?.token}`;
+axios.defaults.headers.userObject = {
+  userName:
+    typeof info === "object" &&
+    info !== null &&
+    info !== {} &&
+    info[0]?.user_name,
+  imageUrl:
+    typeof info === "object" &&
+    info !== null &&
+    info !== {} &&
+    info[0]?.img_url,
+  userId:
+    // eslint-disable-next-line no-underscore-dangle
+    typeof info === "object" && info !== null && info !== {} && info[0]?._id,
+  userEmail:
+    typeof info === "object" && info !== null && info !== {} && info[0]?.email,
+  userOrgId:
+    typeof info === "object" && info !== null && info !== {} && info[0]?.org_id
+};
+// axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
-function App() {
+export default function Home() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    (async () => {
+      dispatch(getUserInfo());
+    })();
+  }, []);
+
   return (
-    <Router>
-      <div className="App font-lato flex">
-        <Switch>
-          <Route exact path="/">
-            <Home />
-          </Route>
-          <Route exact path="/files">
-            <AllFiles />
-          </Route>
-          <Route path="/shared">
-            <Shared />
-          </Route>
-          <Route path="/favourites">
-            <Favourites />
-          </Route>
-          <Route path="/trash">
-            <Trash />
-          </Route>
-          <Route path="/folder">
-            <Folder />
-          </Route>
-          <Route path="/help">
-            <Help />
-          </Route>
-          <Route path="/Activities">
-            <Activities />
-          </Route>
-          <Route path="/fileviewer">
-            <FilePreviewDemo />
-          </Route>
-        </Switch>
-      </div>
-    </Router>
-  )
+    <Layout>
+      <Main />
+    </Layout>
+  );
 }
-
-export default App

@@ -1,17 +1,73 @@
 const router = require('express').Router();
-const { folderCreate, folderUpdate, folderDetails, folderDelete, getAllFolders } = require('../controllers/folder.controller');
+
+const {
+	folderCreate,
+	folderUpdate,
+	folderDetails,
+	folderDelete,
+	getAllFolders,
+	getFilesInFolder,
+	giveFolderAccess,
+	updateFolderAccess,
+	deleteFolderAccess,
+	recentlyViewed,
+	searchStarredFolders,
+	starFolder,
+	unStarFolder,
+	folderRename,
+	folderDeleteWithFiles,
+	copyFolder,
+	addFileToFolder,
+	removeFileFromFolder
+} = require('../controllers/folder.controller');
 
 // CREATE A NEW FOLDER
-router.post('/folder/write', folderCreate);
+router.post('/create', folderCreate);
 
 // FETCH ALL THE FOLDERS FROM THE ENDPOINT
-router.get('/folder/read', getAllFolders);
+router.get('/all', getAllFolders);
+
+// FETCH ALL THE FILES IN A FOLDER
+router.get('/allFiles/:folderId/files', getFilesInFolder);
 
 // FETCH A SINGLE FOLDER DATA FROM THE ENDPOINT
-router.get('/folder/read/:id', folderDetails);
+router.get('/read/:folderId', folderDetails);
 
-router.route('/folder/write/:id')
-  .put(folderUpdate)
-  .delete(folderDelete)
+router.get('/recentlyViewed', recentlyViewed);
+
+// GIVE FOLDER ACCESS FROM THE ENDPOINT
+router.get('/giveaccess', giveFolderAccess);
+
+// GIVE FOLDER ACCESS FROM THE ENDPOINT
+router.get('/updateaccess', updateFolderAccess);
+
+// DELETE FOLDER ACCESS FROM THE ENDPOINT
+router.get('/deleteaccess', deleteFolderAccess);
+
+router.route('/write/:id').put(folderUpdate).delete(folderDelete);
+
+// SEARCH STARRED FOLDERS
+router.get('/searchStarredFolders', searchStarredFolders);
+
+// STAR A FOLDER
+router.put('/starFolder/:id', starFolder);
+
+// UNSTAR A FOLDER
+router.put('/unStarFolder/:id', unStarFolder);
+
+// ADD FILE TO FOLDER
+router.put('/add/:fileId/:folderId', addFileToFolder);
+
+// REMOVE FILE FROM FOLDER
+router.put('/remove/:fileId/:folderId', removeFileFromFolder);
+
+// RENAME A FOLDER
+router.put('/rename/:folderId', folderRename);
+
+// DELETE FOLDER AND FILES IN IT
+router.put('/deleteFolder/:folderId', folderDeleteWithFiles);
+
+// CREATE COPY OF A FOLDER
+router.get('/copyFolder/:folderId', copyFolder);
 
 module.exports = router;

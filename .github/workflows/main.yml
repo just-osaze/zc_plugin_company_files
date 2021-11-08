@@ -1,13 +1,12 @@
-name: Continuous deployment
+name: Zuri Company Files Deployment
 on:
   push:
     branches: [dev]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Companyfiles.zuri
+      - name: Pulling changes for testing
         uses: appleboy/ssh-action@v0.1.2
         with:
           host: ${{ secrets.IP_ADDRESS }}
@@ -16,8 +15,12 @@ jobs:
           port: ${{ secrets.PORT }}
           script: |
             cd /var/www/zc_plugin_company_files
-            git restore .
-            git pull
-            npm run install-setup
-            npm run build
-            pm2 restart server.js
+            git stash
+            git fetch --all
+            git reset --hard origin/dev
+            git checkout dev
+            git pull origin dev
+            yarn build
+            pm2 restart 0
+            
+ 
